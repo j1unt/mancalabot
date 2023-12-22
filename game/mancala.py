@@ -1,5 +1,5 @@
 import random
-from helpers import Position, Board
+from mancala_helpers import Position, Board
 
 """
 Class to simulate Mancala games
@@ -66,9 +66,8 @@ class MancalaGame:
             self.board.add(Position(i, 'bowl', 4, 1, None))
         for i in range(6,12):
             self.board.add(Position(i, 'bowl', 4, 2, None))
-        for i, p in enumerate(self.board.positions):
-            if i != 11:
-                p.next = self.board[i + 1]
+        for i, p in enumerate(self.board.positions[:11]):
+            p.next = self.board[i + 1]
         self.board.add(Position(12, 'store', 0, 1, self.board[6]))
         self.board.add(Position(13, 'store', 0, 2, self.board[0]))
         self.board[5].next = self.board[12]
@@ -94,7 +93,7 @@ class MancalaGame:
             if move[2] == False:
                 if player == 1:
                     player = 2
-                if player == 2:
+                elif player == 2:
                     player = 1
 
             # Check for a win
@@ -176,9 +175,13 @@ class MancalaGame:
         # Capture if player ended in their own empty bowl adjacent to a non-empty enemy bowl
         if final_position.owner == player and final_position.type == 'store':
             refresh = True
-        elif final_position.owner == player and final_position.value == 1 and final_position.type == 'bowls':
+            if self.mode == 'default' and not self.gui:
+                print('Refresh!')
+        elif final_position.owner == player and final_position.value == 1 and final_position.type == 'bowl':
             amount_won = self.board[11 - final_position.index].value + 1
             if amount_won > 1:
+                if self.mode == 'default' and not self.gui:
+                    print(f'Captured {amount_won} pieces!')
                 self.board[11 - final_position.index] = 0
                 self.board[final_position.index] = 0
                 if player == 1:
