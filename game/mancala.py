@@ -45,9 +45,9 @@ class MancalaGame:
         self.board = None
 
 
-    def run_game(self, max_moves=100, starting_player=1):
+    def start_game(self, max_moves=100, starting_player=1):
         """
-        Runs a game in the selected mode.
+        Starts a game in the selected mode.
 
         Board layout by indices of positions, clockwise:
                   Player 1's board
@@ -56,9 +56,9 @@ class MancalaGame:
         |       | 11 10 9  8  7  6 |       |
                   Player 2's board
         """
-        states = []
-        moves = []
-        player = starting_player
+        self.states = []
+        self.moves = []
+        self.player = starting_player
         
         # Create board
         self.board = Board()
@@ -73,39 +73,52 @@ class MancalaGame:
         self.board[5].next = self.board[12]
         self.board[11].next = self.board[13]
 
-        # Main game loop
-        while(self.board.sum() > 0):
 
-            # Log board state
-            states.append(
-                {
-                    'board': self.board.flatten(),
-                    'bank1': self.board.bank1().value,
-                    'bank2': self.board.bank2().value,
-                    'player': player,
-                }
-            )
+    def step(self, move=None):
+        """
+        Performs an iteration of mancala:
+        Records state
+        Executes move
+        Checks for a win
+        Ends the game if needed
+        Returns any additions or removals
+        """
+        if self.board.sum() <= 0:
+            self.end_game(self.states, self.moves, 0)
 
-            # Make a move
-            move = self.make_move(player)
-            moves.append(move)
-            # Don't switch if player got a refresh
-            if move[2] == False:
-                if player == 1:
-                    player = 2
-                elif player == 2:
-                    player = 1
+        # Log board state
+        self.states.append(
+            {
+                'board': self.board.flatten(),
+                'bank1': self.board.bank1().value,
+                'bank2': self.board.bank2().value,
+                'player': self.player,
+            }
+        )
 
-            # Check for a win
-            num_remaining = self.board.sum()
-            if self.board.bank1().value - self.board.bank2().value > num_remaining:
-                self.end_game(states, moves, 1)
-                return
-            elif self.board.bank2().value - self.board.bank1().value  > num_remaining:
-                self.end_game(states, moves, 2)
-                return
-        # If tied or broken
-        self.end_game(states, moves, 0)
+        # Make a move
+        if move == None:
+            move = self.make_move(self.player)
+        else:
+            move = self.make_move(self.player, move)
+        self.moves.append(move)
+        # Don't switch if player got a refresh
+        if move[2] == False:
+            if self.player == 1:
+                self.player = 2
+            elif self.player == 2:
+                self.player = 1
+
+        # Check for a win
+        num_remaining = self.board.sum()
+        if self.board.bank1().value - self.board.bank2().value > num_remaining:
+            self.end_game(self.states, self.moves, 1)
+            return
+        elif self.board.bank2().value - self.board.bank1().value  > num_remaining:
+            self.end_game(self.states, self.moves, 2)
+            return
+        # Return additions and removals
+        return (move[3], move[4])
 
 
     def end_game(self, states=None, moves=None, winner=None):
@@ -126,7 +139,7 @@ class MancalaGame:
         )
 
 
-    def make_move(self, player=0):
+    def make_move(self, player=0, move=None):
         """
         Generates a decision based on game mode, then executes the move on the board
         Returns a tuple containing the move log
@@ -134,14 +147,12 @@ class MancalaGame:
         # Make choice
         choice = None
         if self.mode == 'default' and not self.gui:
-            options = None
-            if player == 1:
-                options = [i for i, b in enumerate(self.board.bowls1()) if b.value != 0]
-            elif player == 2:
-                options = [i + 6 for i, b in enumerate(self.board.bowls2()) if b.value != 0]
+            options = self.get_options()
             self.display_board_console(player, options)
             while(choice not in options):
                 choice = int(input())
+        elif self.mode == 'default' and self.gui:
+            choice = move
         elif self.mode == 'random':
             if player == 1:
                 choice = random.choice([i for i, b in enumerate(self.board.bowls1()) if b.value != 0])
@@ -151,9 +162,13 @@ class MancalaGame:
             raise('make_move: Invalid mode: ' + str(self.mode))
 
         # Execute move
+        additions = [0] * 14
+        removals = [0] * 14
+
         curr = self.board[choice]
         amount = curr.value
         curr.value = 0
+        removals[curr.index] += 1
         curr = curr.next
         
         refresh = False
@@ -167,6 +182,7 @@ class MancalaGame:
             else:
                 final_position = curr
                 curr.increment()
+                additions[curr.index] += 1
                 curr = curr.next
                 count += 1
         
@@ -184,12 +200,25 @@ class MancalaGame:
                     print(f'Captured {amount_won} pieces!')
                 self.board[11 - final_position.index] = 0
                 self.board[final_position.index] = 0
+                removals[11 - final_position.index] += 1
+                removals[final_position.index] += 1
                 if player == 1:
                     self.board[self.board.bank1().index].value += amount_won
+                    additions[self.board.bank1().index] += amount_won
                 elif player == 2:
                     self.board[self.board.bank2().index].value += amount_won
+                    additions[self.board.bank2().index] += amount_won
 
-        return (player, choice, refresh)
+        return (player, choice, refresh, additions, removals)
+    
+
+    def get_options(self):
+        options = None
+        if self.player == 1:
+            options = [i for i, b in enumerate(self.board.bowls1()) if b.value != 0]
+        elif self.player == 2:
+            options = [i + 6 for i, b in enumerate(self.board.bowls2()) if b.value != 0]
+        return options
     
 
     def display_board_console(self, player=None, options=None):
@@ -208,7 +237,3 @@ class MancalaGame:
         print(f'Player {str(player)}, choose a bowl to move: ')
         print(str(options) + '\n')
         print('Choice: ')
-
-# Main code
-game = MancalaGame()
-game.run_game()
