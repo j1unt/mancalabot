@@ -49,8 +49,8 @@ class Board:
     # Clears all bowls and returns an array representing the removals
     def clear_bowls(self):
         removals = [0] * 14
-        for pos in self.positions:
-            if pos.value > 0:
+        for i, pos in enumerate(self.positions):
+            if pos.value > 0 and i < 12:
                 removals[pos.index] = pos.value
                 pos.value = 0
         return removals

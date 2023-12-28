@@ -176,20 +176,17 @@ class MancalaGame:
         """
         # Make choice
         choice = None
-        if self.mode == 'default' and not self.gui:
+        if ((self.mode == 'default') or (self.mode == 'random' and player == 1)) and not self.gui:
             options = self.get_options()
             self.display_board_console(player, options)
             while(choice not in options):
                 choice = int(input())
-        elif self.mode == 'default' and self.gui:
+        elif ((self.mode == 'default') or (self.mode == 'random' and player == 1)) and self.gui and move != None:
             choice = move
-        elif self.mode == 'random':
-            if player == 1:
-                choice = random.choice([i for i, b in enumerate(self.board.bowls1()) if b.value != 0])
-            elif player == 2:
-                choice = random.choice([i + 6 for i, b in enumerate(self.board.bowls2()) if b.value != 0])
+        elif self.mode == 'random' and player == 2:
+            choice = random.choice([i + 6 for i, b in enumerate(self.board.bowls2()) if b.value != 0])
         else:
-            raise('make_move: Invalid mode: ' + str(self.mode))
+            raise Exception('make_move: Invalid mode: ' + str(self.mode) + ' Player ' + str(player) + ' move: ' + str(move))
 
         # Execute move
         additions = [0] * 14
@@ -248,8 +245,6 @@ class MancalaGame:
             options = [i for i, b in enumerate(self.board.bowls1()) if b.value != 0]
         elif self.player == 2:
             options = [i + 6 for i, b in enumerate(self.board.bowls2()) if b.value != 0]
-        
-        print(f'Player {self.player}: {options}')
         return options
     
 
