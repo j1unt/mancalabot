@@ -46,6 +46,15 @@ class Board:
             res.append(self.positions[i].dict())
         return res
     
+    # Clears all bowls and returns an array representing the removals
+    def clear_bowls(self):
+        removals = [0] * 14
+        for pos in self.positions:
+            if pos.value > 0:
+                removals[pos.index] = pos.value
+                pos.value = 0
+        return removals
+    
     # These correspond to player 1 and 2
     def bank1(self):
         return self.positions[12]

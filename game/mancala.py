@@ -83,8 +83,11 @@ class MancalaGame:
         Ends the game if needed
         Returns any additions or removals
         """
+
+        # If board is empty, end the game
         if self.board.sum() <= 0:
-            self.end_game(self.states, self.moves, 0)
+            winner = self.end_game(self.states, self.moves)
+            return (True, winner, None, None)
 
         # Log board state
         self.states.append(
@@ -112,19 +115,44 @@ class MancalaGame:
         # Check for a win
         num_remaining = self.board.sum()
         if self.board.bank1().value - self.board.bank2().value > num_remaining:
-            self.end_game(self.states, self.moves, 1)
-            return
+            winner = self.end_game(self.states, self.moves)
+            return (True, winner, move[3], move[4])
         elif self.board.bank2().value - self.board.bank1().value  > num_remaining:
-            self.end_game(self.states, self.moves, 2)
-            return
-        # Return additions and removals
-        return (move[3], move[4])
+            winner = self.end_game(self.states, self.moves)
+            return (True, winner, move[3], move[4])
+        
+        # If the next player has no options, end the game
+        if not self.get_options():
+            winnings = self.board.sum()
+            additions = [0] * 14
+            if self.player == 1:
+                self.board[13].value = self.board[13].value + winnings
+                additions[13] = winnings
+            elif self.player == 2:
+                self.board[12].value = self.board[12].value + winnings
+                additions[12] = winnings
+            removals = self.board.clear_bowls()
+            winner = self.end_game()
+            for i in range(14):
+                additions[i] += move[3][i]
+                removals[i] += move[4][i]
+            return (True, winner, additions, removals)
+
+        # Return win state, winning player, additions and removals
+        return (False, None, move[3], move[4])
 
 
-    def end_game(self, states=None, moves=None, winner=None):
+    def end_game(self, states=None, moves=None):
         """
         Handles a game finish.
         """
+        # Decide winner
+        winner = 0
+        if self.board.bank1().value > self.board.bank2().value:
+            winner = 1
+        elif self.board.bank2().value > self.board.bank1().value:
+            winner = 2
+
         if self.mode == 'default' and not self.gui:
             print(f'Player {winner} won!')
         self.storage.append(
@@ -137,6 +165,8 @@ class MancalaGame:
                 'winner': winner,
             }
         )
+
+        return winner
 
 
     def make_move(self, player=0, move=None):
@@ -218,6 +248,8 @@ class MancalaGame:
             options = [i for i, b in enumerate(self.board.bowls1()) if b.value != 0]
         elif self.player == 2:
             options = [i + 6 for i, b in enumerate(self.board.bowls2()) if b.value != 0]
+        
+        print(f'Player {self.player}: {options}')
         return options
     
 
