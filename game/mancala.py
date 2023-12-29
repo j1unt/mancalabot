@@ -1,4 +1,7 @@
+import json
 import random
+
+
 from mancala_helpers import Position, Board
 
 """
@@ -45,7 +48,21 @@ class MancalaGame:
         self.board = None
 
 
-    def start_game(self, max_moves=100, starting_player=1):
+    def gen_data(self, max_moves=100):
+        if self.mode not in ['random_training', 'bot_vs_random_training', 'bot_vs_bot_training']:
+            print('Training mode not selected: Cannot generate data!')
+            return
+        else:
+            for g in range(self.num_games):
+                self.start_game(starting_player=self.starting_player)
+                for m in range(max_moves):
+                    update = self.step()
+                    if update[0] == True:
+                        break
+        print('Training complete!')
+
+
+    def start_game(self, starting_player=1):
         """
         Starts a game in the selected mode.
 
@@ -81,12 +98,12 @@ class MancalaGame:
         Executes move
         Checks for a win
         Ends the game if needed
-        Returns any additions or removals
+        Returns returns win state and winner if True, 0 if False or tie, and additions/removals
         """
 
         # If board is empty, end the game
         if self.board.sum() <= 0:
-            winner = self.end_game(self.states, self.moves)
+            winner = self.end_game()
             return (True, winner, None, None)
 
         # Log board state
@@ -115,10 +132,10 @@ class MancalaGame:
         # Check for a win
         num_remaining = self.board.sum()
         if self.board.bank1().value - self.board.bank2().value > num_remaining:
-            winner = self.end_game(self.states, self.moves)
+            winner = self.end_game()
             return (True, winner, move[3], move[4])
         elif self.board.bank2().value - self.board.bank1().value  > num_remaining:
-            winner = self.end_game(self.states, self.moves)
+            winner = self.end_game()
             return (True, winner, move[3], move[4])
         
         # If the next player has no options, end the game
@@ -142,7 +159,7 @@ class MancalaGame:
         return (False, None, move[3], move[4])
 
 
-    def end_game(self, states=None, moves=None):
+    def end_game(self):
         """
         Handles a game finish.
         """
@@ -155,14 +172,27 @@ class MancalaGame:
 
         if self.mode == 'default' and not self.gui:
             print(f'Player {winner} won!')
+        elif self.mode == 'random_training':
+            print(f'Game {len(self.storage)} complete. Winner: Player {winner}')
+
+        final_moves = []
+        for i, move in enumerate(self.moves):
+            final_moves.append({
+                'index': i,
+                'player': move[0],
+                'choice': move[1],
+                'refresh': move[2],
+                'additions': move[3],
+                'removals': move[4],
+            })
         self.storage.append(
             {
                 'id': len(self.storage),
                 'mode': self.mode,
                 'starting_player': self.starting_player,
-                'states': states,
-                'moves': moves,
                 'winner': winner,
+                'states': self.states,
+                'moves': final_moves,
             }
         )
 
@@ -185,6 +215,11 @@ class MancalaGame:
             choice = move
         elif self.mode == 'random' and player == 2:
             choice = random.choice([i + 6 for i, b in enumerate(self.board.bowls2()) if b.value != 0])
+        elif self.mode == 'random_training':
+            if player == 1:
+                choice = random.choice([i for i, b in enumerate(self.board.bowls1()) if b.value != 0])
+            elif player == 2:
+                choice = random.choice([i + 6 for i, b in enumerate(self.board.bowls2()) if b.value != 0])
         else:
             raise Exception('make_move: Invalid mode: ' + str(self.mode) + ' Player ' + str(player) + ' move: ' + str(move))
 
@@ -240,6 +275,9 @@ class MancalaGame:
     
 
     def get_options(self):
+        """
+        Returns the current players valid options for moves
+        """
         options = None
         if self.player == 1:
             options = [i for i, b in enumerate(self.board.bowls1()) if b.value != 0]
@@ -247,6 +285,16 @@ class MancalaGame:
             options = [i + 6 for i, b in enumerate(self.board.bowls2()) if b.value != 0]
         return options
     
+    def get_log(self):
+        """
+        Saves a log of all the games
+        """
+        with open("mancala_data_raw.json", 'w') as file:
+            res = {}
+            for i, game in enumerate(self.storage):
+                res[f'game{i}'] = game
+            json.dump(res, file)
+            file.close()
 
     def display_board_console(self, player=None, options=None):
         """
