@@ -46,6 +46,10 @@ class Board:
     
 
     def render(self):
+        """
+        Returns a surface representing the board state
+        """
+        
         board = pygame.Surface(self.size)
         board.fill(self.BOARD_COLOR)
         # Draw bowls

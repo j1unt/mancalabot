@@ -17,7 +17,7 @@ class GUI:
         self.height = height
         self.mode = mode
         self.player = starting_player
-        self.delay = delay
+        self.delay = delay # Sets time.sleep() amount for automated moves
 
     def run(self):
         # Start Mancala oracle
@@ -71,7 +71,7 @@ class GUI:
     def game_step(self, choice=None):
         """
         Performs a game step and returns a boolean to show whether or not the game ended
-        Game is manual for both players by default. The 
+        Game is manual for both players by default.
         """
         finish = False
         win_label = None
