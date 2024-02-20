@@ -45,7 +45,7 @@ class MancalaBotModel(nn.Module):
         super().__init__()
         
         self.input_size = 18
-        self.hidden_neurons = 32
+        self.hidden_neurons = 48
         self.output_size = 1
 
         self.sigmoid = torch.sigmoid
@@ -64,6 +64,9 @@ class MancalaBotModel(nn.Module):
 
         # Pass data to output layer
         x = self.output_layer(x)
+
+        # Convert output to [0,1]
+        x = self.sigmoid(x)
 
         return x
         
@@ -96,10 +99,19 @@ class MancalaBot:
         self.optimizer.zero_grad()
         return loss
 
-    def train(self, save=False):
+    def train(self, save=False, record_data=False):
+        log = []
         for t in range(self.epochs):
+            losses = []
+            batches = []
             for batch, (X, y) in enumerate(self.dataloader):
                 current_loss = self.train_step(X, y)
                 print(f'Batch: {batch} | Loss: {current_loss.item()}')
+                if record_data:
+                    losses.append(current_loss.item())
+                    batches.append(batch)
+            log.append((losses, batches))
         if save:
             self.model.save()
+        if record_data:
+            return log
