@@ -4,6 +4,10 @@ import random
 import pygame
 from pygame.locals import *
 
+"""
+Helper classes for the GUI
+"""
+
 class Board:
     BOARD_COLOR = (117, 98, 46)
     POSITION_COLOR_1 = (90, 94, 204)

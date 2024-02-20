@@ -18,6 +18,9 @@ Records data on:
   - Current player
   - Index chosen
   - Refresh
+  - Capture
+  - Additions
+  - Removals
 
 Modes:
     - Main modes
@@ -115,6 +118,7 @@ class MancalaGame:
                 'bank1': self.board.bank1().value,
                 'bank2': self.board.bank2().value,
                 'player': self.player,
+                'options': self.get_options(),
             }
         )
 
@@ -205,6 +209,7 @@ class MancalaGame:
         curr = curr.next
         
         refresh = False
+        capture = False
         final_position = None
         count = 0
         while count < amount:
@@ -229,6 +234,7 @@ class MancalaGame:
         elif final_position.owner == player and final_position.value == 1 and final_position.type == 'bowl':
             amount_won = self.board[11 - final_position.index].value + 1
             if amount_won > 1:
+                capture = True
                 if self.mode == 'default' and not self.gui:
                     print(f'Captured {amount_won} pieces!')
                 self.board[11 - final_position.index] = 0
@@ -242,7 +248,7 @@ class MancalaGame:
                     self.board[self.board.bank2().index].value += amount_won
                     additions[self.board.bank2().index] += amount_won
 
-        return (player, choice, refresh, additions, removals)
+        return (choice, refresh, capture, additions, removals, player)
     
 
     def end_game(self):
@@ -266,11 +272,12 @@ class MancalaGame:
         for i, move in enumerate(self.moves):
             final_moves.append({
                 'index': i,
-                'player': move[0],
-                'choice': move[1],
-                'refresh': move[2],
+                'choice': move[0],
+                'refresh': move[1],
+                'capture': move[2],
                 'additions': move[3],
                 'removals': move[4],
+                'player': move[5],
             })
         self.storage.append(
             {
@@ -288,7 +295,7 @@ class MancalaGame:
 
     def get_options(self):
         """
-        Returns the current players valid options for moves
+        Returns the current player's valid options for moves
         """
 
         options = None
@@ -308,6 +315,7 @@ class MancalaGame:
             res = {}
             for i, game in enumerate(self.storage):
                 res[f'game{i}'] = game
+            res['length'] = len(self.storage)
             json.dump(res, file)
             file.close()
 

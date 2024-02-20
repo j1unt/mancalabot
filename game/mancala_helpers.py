@@ -1,3 +1,7 @@
+"""
+Helper classes for the mancala engine
+"""
+
 # Defines each position a piece can be in on the board. Types are Banks and Bowls.
 class Position:
     def __init__(self, index, type, value, owner, next):
@@ -9,14 +13,6 @@ class Position:
 
     def increment(self):
         self.value += 1
-
-    def dict(self):
-        return {
-            'index': self.index,
-            'type': self.type,
-            'value': self.value,
-            'owner': self.owner
-        }
     
 # Defines a container for the linked list of positions.
 class Board:
@@ -39,12 +35,9 @@ class Board:
             sum += self.positions[i].value
         return sum
     
-    # Converts to a list of dictionaries for recording state
+    # Returns a list of bowl values
     def flatten(self):
-        res = []
-        for i in range(0,12):
-            res.append(self.positions[i].dict())
-        return res
+        return [self.positions[i].value for i in range(0,12)]
     
     # Clears all bowls and returns an array representing the removals
     def clear_bowls(self):

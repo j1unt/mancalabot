@@ -7,6 +7,10 @@ from pygame.locals import *
 from mancala import MancalaGame
 from gui_helpers import Board, Bowl, Bank
 
+"""
+A class to run the mancala engine in a GUI game loop
+"""
+
 class GUI:
     BACKGROUND_COLOR = (46, 42, 39)
 
@@ -73,6 +77,7 @@ class GUI:
         Performs a game step and returns a boolean to show whether or not the game ended
         Game is manual for both players by default.
         """
+        
         finish = False
         win_label = None
         # Run a game step
@@ -103,6 +108,7 @@ class GUI:
         """
         Renders a new state on the screen
         """
+
         self.screen.fill(self.BACKGROUND_COLOR)
 
         mancala_label = self.font.render('Mancala', 1, (255,255,0))
